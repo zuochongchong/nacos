@@ -215,6 +215,8 @@ public class RaftCore implements Closeable {
         if (stopWork) {
             throw new IllegalStateException("old raft protocol already stop work");
         }
+        
+        // 本机不是leader 节点需要将注册消息发送至leader节点。由leader节点处理
         if (!isLeader()) {
             ObjectNode params = JacksonUtils.createEmptyJsonNode();
             params.put("key", key);
@@ -255,6 +257,7 @@ public class RaftCore implements Closeable {
                     continue;
                 }
                 final String url = buildUrl(server, API_ON_PUB);
+                // 同步实例给集群中其他节点，当前执行的是leader节点
                 HttpClient.asyncHttpPostLarge(url, Arrays.asList("key", key), content, new Callback<String>() {
                     @Override
                     public void onReceive(RestResult<String> result) {
